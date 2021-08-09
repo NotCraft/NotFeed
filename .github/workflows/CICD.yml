@@ -20,7 +20,16 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
-
+      - name: Cargo cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: Min-${{ env.MIN_SUPPORTED_RUST_VERSION }}
       - name: Install rust toolchain (v${{ env.MIN_SUPPORTED_RUST_VERSION }})
         uses: actions-rs/toolchain@v1
         with:
@@ -37,31 +46,6 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-
-  test_and_install:
-    name: Run tests
-    runs-on: ubuntu-18.04
-    steps:
-      - name: Git checkout
-        uses: actions/checkout@v2
-        with:
-          submodules: true # we need all syntax and theme submodules
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          default: true
-          profile: minimal
-      - name: Build and install notfeed
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: --path .
-      - name: Run unit tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --release
 
   build:
     name: ${{ matrix.job.os }} (${{ matrix.job.target }})
@@ -84,6 +68,17 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
+
+      - name: Cargo cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ matrix.job.target }}-cargo-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Install prerequisites
         shell: bash

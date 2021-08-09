@@ -9,6 +9,12 @@ homepage = "https://github.com/NotCraft/NotFeed"
 repository = "https://github.com/NotCraft/NotFeed"
 keywords = ["shell", "server", "rss"]
 
+[profile.release]
+lto = true
+opt-level = 3
+panic = 'abort'
+codegen-units = 1
+
 [dependencies]
 regex = "1.5"
 serde = "1.0"
