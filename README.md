@@ -39,6 +39,11 @@ An RSS reader running entirely from your GitHub repo.
 4. Scroll to the bottom of the page, click "Commit changes" button.
 5. Once the rebuild finishes, your feed will be available at `https://<github_username>.github.io/<repo>`
 
+## TODO
+
++ Fix `notfeed serve` command not return statics files
++ When build error should retry or skip
+
 ## Thanks
 
 + Inspired by [osmos::feed](https://github.com/osmoscraft/osmosfeed)

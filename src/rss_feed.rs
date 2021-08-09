@@ -67,10 +67,31 @@ impl Rss {
                 .build()?,
         };
 
-        info!("Feeding Rss Cache!");
+        #[cfg(debug_assertions)]
+        let mut rss: Rss = if config.debug {
+            match feed_cache(&config.cache_url, &client) {
+                Ok(rss) => {
+                    info!("Feeding Rss Cache Successfully!");
+                    rss
+                }
+                Err(_err) => Default::default(),
+            }
+        } else {
+            match feed_cache_local(&config.cache_url, &client) {
+                Ok(rss) => {
+                    info!("Feeding Rss Cache Successfully!");
+                    rss
+                }
+                Err(_err) => Default::default(),
+            }
+        };
 
+        #[cfg(not(debug_assertions))]
         let mut rss: Rss = match feed_cache(&config.cache_url, &client) {
-            Ok(rss) => rss,
+            Ok(rss) => {
+                info!("Feeding Rss Cache Successfully!");
+                rss
+            }
             Err(_err) => Default::default(),
         };
 
@@ -93,7 +114,6 @@ impl Rss {
     }
 }
 
-#[cfg(not(debug_assertions))]
 fn feed_cache<T: reqwest::IntoUrl>(
     url: T,
     client: &Client,
@@ -102,7 +122,7 @@ fn feed_cache<T: reqwest::IntoUrl>(
 }
 
 #[cfg(debug_assertions)]
-fn feed_cache<T: reqwest::IntoUrl + Debug>(
+fn feed_cache_local<T: reqwest::IntoUrl + Debug>(
     _url: T,
     _client: &Client,
 ) -> Result<Rss, Box<dyn std::error::Error>> {

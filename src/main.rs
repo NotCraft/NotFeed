@@ -73,9 +73,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Copying Static Files!");
     fs::create_dir_all("target")?;
-    if Path::new("static").exists() {
+    if Path::new(&config.statics_dir).exists() {
         let mut options = CopyOptions::new();
         options.content_only = true;
+        options.overwrite = true;
         copy(&config.statics_dir, "target", &options)?;
     }
 

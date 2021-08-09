@@ -10,6 +10,8 @@ use tracing::info;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
+    #[cfg(debug_assertions)]
+    pub(crate) debug: bool,
     pub(crate) cache_max_days: i64,
     pub(crate) cache_url: String,
     pub(crate) templates_dir: String,
@@ -23,6 +25,8 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Config {
         Config {
+            #[cfg(debug_assertions)]
+            debug: false,
             cache_url: "".to_string(),
             site_title: "".to_string(),
             templates_dir: "includes".to_string(),
