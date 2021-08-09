@@ -1,0 +1,12 @@
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: "/"
+    schedule:
+      interval: monthly
+      time: "04:00"
+      timezone: Europe/Berlin
+    ignore:
+      - dependency-name: handlebars
+        versions:
+          - 4.1.2-alpha.0

@@ -7,7 +7,6 @@ mod rss_feed;
 extern crate actix_web;
 
 use tracing::{info, span};
-use tracing_subscriber;
 
 use clap::{AppSettings, Clap};
 use config::Config;

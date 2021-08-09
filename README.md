@@ -2,7 +2,6 @@
 [![license](https://img.shields.io/github/license/notcraft/notfeed.svg?maxAge=86400)](LICENSE)
 
 # NotCraft::NotFeed
-=========
 
 An RSS reader running entirely from your GitHub repo.
 

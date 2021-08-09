@@ -5,7 +5,6 @@ use rss::Channel;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display};
 use std::fs::File;
-use std::io::BufReader;
 use tracing::info;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -34,7 +33,7 @@ impl Default for Rss {
 
 impl DailyRss {
     pub fn new<'t, T: reqwest::IntoUrl + ToString + Clone + Debug + Display>(
-        urls: &'t Vec<T>,
+        urls: &'t [T],
         client: &Client,
     ) -> Result<DailyRss, Box<dyn std::error::Error>>
     where
@@ -107,6 +106,7 @@ fn feed_cache<T: reqwest::IntoUrl + Debug>(
     _url: T,
     _client: &Client,
 ) -> Result<Rss, Box<dyn std::error::Error>> {
+    use std::io::BufReader;
     let file = File::open("target/cache.json")?;
     let reader = BufReader::new(file);
     Ok(serde_json::from_reader(reader)?)
@@ -116,7 +116,7 @@ mod date_format {
     use chrono::{Date, NaiveDate, Utc};
     use serde::{self, Deserialize, Deserializer, Serializer};
 
-    const FORMAT: &'static str = "%Y-%m-%d";
+    const FORMAT: &str = "%Y-%m-%d";
 
     pub fn serialize<S>(date: &Date<Utc>, serializer: S) -> Result<S::Ok, S::Error>
     where
