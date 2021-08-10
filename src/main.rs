@@ -3,7 +3,7 @@ mod render;
 mod rhai_regex;
 mod rss_feed;
 
-use clap::{AppSettings, Clap};
+use clap::{crate_version, AppSettings, Clap};
 use config::Config;
 use fs_extra::copy_items;
 use fs_extra::dir::{copy, get_dir_content, CopyOptions};
@@ -20,7 +20,7 @@ use tracing::{info, span};
 use warp::{self, Filter};
 
 #[derive(Clap)]
-#[clap(version = "v0.1.1", author = "Feng Yunlong <ylfeng@ir.hit.edu.cn>")]
+#[clap(version = crate_version!(), author = "Feng Yunlong <ylfeng@ir.hit.edu.cn>")]
 #[clap(setting = AppSettings::ColoredHelp)]
 struct Opts {
     #[clap(subcommand)]
@@ -29,13 +29,10 @@ struct Opts {
 
 #[derive(Clap)]
 enum SubCommand {
-    #[clap(
-        author = "Feng Yunlong <ylfeng@ir.hit.edu.cn>",
-        about = "Server serve."
-    )]
+    #[clap(version = crate_version!(), author = "Feng Yunlong <ylfeng@ir.hit.edu.cn>", about = "Server serve.")]
     Serve(Serve),
 
-    #[clap(author = "Feng Yunlong <ylfeng@ir.hit.edu.cn>", about = "Build.")]
+    #[clap(version = crate_version!(),author = "Feng Yunlong <ylfeng@ir.hit.edu.cn>", about = "Build.")]
     Build,
 }
 
