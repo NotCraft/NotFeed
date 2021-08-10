@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.1.4
+
+### Bugfixes
+
++ fix build time update
+
 ## v0.1.3
 
 ### Features
