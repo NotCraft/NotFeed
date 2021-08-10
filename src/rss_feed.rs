@@ -1,11 +1,11 @@
 use crate::config::Config;
 use chrono::{Date, DateTime, Duration, Utc};
-use reqwest::blocking::Client;
+use reqwest::Client;
 use rss::Channel;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display};
 use std::fs::File;
-use tracing::info;
+use tracing::{info, warn};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DailyRss {
@@ -32,7 +32,7 @@ impl Default for Rss {
 }
 
 impl DailyRss {
-    pub fn new<'t, T: reqwest::IntoUrl + ToString + Clone + Debug + Display>(
+    pub async fn new<'t, T: reqwest::IntoUrl + ToString + Clone + Debug + Display>(
         urls: &'t [T],
         client: &Client,
     ) -> Result<DailyRss, Box<dyn std::error::Error>>
@@ -42,12 +42,18 @@ impl DailyRss {
         let mut channels = vec![];
         for url in urls {
             info!("Feeding rss from {}", url);
-            channels.push({
-                let content = client.get(url.clone()).send()?.bytes()?;
-                let mut channel = Channel::read_from(&content[..])?;
-                channel.link = url.to_string();
-                channel
-            });
+            let response = client.get(url.clone()).send().await;
+            match response {
+                Ok(content) => {
+                    let content = content.bytes().await?;
+                    let mut channel = Channel::read_from(&content[..])?;
+                    channel.link = url.to_string();
+                    channels.push(channel);
+                }
+                Err(err) => {
+                    info!("Feeding rss from {} failed {}!", url, err.to_string());
+                }
+            };
         }
 
         Ok(DailyRss {
@@ -58,41 +64,25 @@ impl DailyRss {
 }
 
 impl Rss {
-    pub fn feed_rss(config: &Config) -> Result<Rss, Box<dyn std::error::Error>> {
-        info!("Building rss Client!");
+    pub async fn feed_rss(config: &Config) -> Result<Rss, Box<dyn std::error::Error>> {
+        info!("Building rss client!");
         let client = match &config.proxy {
-            None => reqwest::blocking::Client::builder().build()?,
-            Some(scheme) => reqwest::blocking::Client::builder()
+            None => reqwest::Client::builder().build()?,
+            Some(scheme) => reqwest::Client::builder()
                 .proxy(reqwest::Proxy::all(scheme)?)
                 .build()?,
         };
 
-        #[cfg(debug_assertions)]
-        let mut rss: Rss = if config.debug {
-            match feed_cache(&config.cache_url, &client) {
-                Ok(rss) => {
-                    info!("Feeding Rss Cache Successfully!");
-                    rss
-                }
-                Err(_err) => Default::default(),
-            }
-        } else {
-            match feed_cache_local(&config.cache_url, &client) {
-                Ok(rss) => {
-                    info!("Feeding Rss Cache Successfully!");
-                    rss
-                }
-                Err(_err) => Default::default(),
-            }
-        };
-
-        #[cfg(not(debug_assertions))]
-        let mut rss: Rss = match feed_cache(&config.cache_url, &client) {
+        info!("Feeding rss cache from {}!", config.cache_url);
+        let mut rss: Rss = match feed_cache(&config.cache_url, &client).await {
             Ok(rss) => {
-                info!("Feeding Rss Cache Successfully!");
+                info!("Feed rss cache Successfully!");
                 rss
             }
-            Err(_err) => Default::default(),
+            Err(err) => {
+                warn!("Feed rss Cache Failed {}!", err.to_string());
+                Default::default()
+            }
         };
 
         let today = Utc::today();
@@ -106,7 +96,8 @@ impl Rss {
             .collect();
 
         info!("Feeding today's Rss!");
-        rss.days.push(DailyRss::new(&config.sources, &client)?);
+        rss.days
+            .push(DailyRss::new(&config.sources, &client).await?);
 
         let mut f = File::create("target/cache.json")?;
         serde_json::to_writer(&mut f, &rss)?;
@@ -115,22 +106,11 @@ impl Rss {
     }
 }
 
-fn feed_cache<T: reqwest::IntoUrl>(
+async fn feed_cache<T: reqwest::IntoUrl + Display>(
     url: T,
     client: &Client,
 ) -> Result<Rss, Box<dyn std::error::Error>> {
-    Ok(client.get(url).send()?.json()?)
-}
-
-#[cfg(debug_assertions)]
-fn feed_cache_local<T: reqwest::IntoUrl + Debug>(
-    _url: T,
-    _client: &Client,
-) -> Result<Rss, Box<dyn std::error::Error>> {
-    use std::io::BufReader;
-    let file = File::open("target/cache.json")?;
-    let reader = BufReader::new(file);
-    Ok(serde_json::from_reader(reader)?)
+    Ok(client.get(url).send().await?.json().await?)
 }
 
 mod date_format {
