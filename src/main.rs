@@ -68,10 +68,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let rss = Rss::feed_rss(&config).await?;
     let hbs = handlebars(&config)?;
+    let statics_dir = config.statics_dir.as_str();
 
     match opts.subcmd {
         SubCommand::Serve(serve) => {
             let hbs_ref = Arc::new(hbs);
+
             let socks: SocketAddr = format!("{}:{}", serve.addr, serve.port).parse()?;
 
             let route = warp::get().and(warp::path::end()).map(move || {
@@ -80,7 +82,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .unwrap_or_else(|e| e.to_string());
                 warp::reply::html(result)
             });
-            let static_files = warp::fs::dir(&config.statics_dir);
+            let static_files = warp::fs::dir(statics_dir.to_string());
 
             // GET / => rendered index templates
             // GET /... => statics_dir/...
