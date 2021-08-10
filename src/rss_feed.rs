@@ -92,6 +92,7 @@ impl Rss {
         let today = Utc::today();
         let cache_day = today - Duration::days(config.cache_max_days);
 
+        rss.build_time = Utc::now();
         rss.site_title = config.site_title.clone();
         rss.days = rss
             .days
