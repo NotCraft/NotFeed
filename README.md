@@ -32,6 +32,7 @@ An RSS reader running entirely from your GitHub repo.
    # statics_dir   = "statics"       ## Optional: default is "statics"
    # templates_dir = "includes"      ## Optional: default is "includes"
    # cache_url = "https://GITHUB_USERNAME.github.io/REPO_NAME/cache.json"
+   # minify = true
    
    # [scripts]
    # highlight = "scripts/highlight.rhai"
@@ -50,7 +51,10 @@ An RSS reader running entirely from your GitHub repo.
 
 ## TODO
 
-+ When build error should retry or skip
++ When build error should retry or skip.
++ Fix If minify is true, the statics dir will be flattened.
++ Generate atom format file.
++ Refactor render structs.
 
 ## Thanks
 

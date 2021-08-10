@@ -73,16 +73,20 @@ impl Rss {
                 .build()?,
         };
 
-        info!("Feeding rss cache from {}!", config.cache_url);
-        let mut rss: Rss = match feed_cache(&config.cache_url, &client).await {
-            Ok(rss) => {
-                info!("Feed rss cache Successfully!");
-                rss
+        let mut rss: Rss = if let Some(cache_url) = &config.cache_url {
+            info!("Feeding rss cache from {}!", cache_url);
+            match feed_cache(cache_url, &client).await {
+                Ok(rss) => {
+                    info!("Feed rss cache Successfully!");
+                    rss
+                }
+                Err(err) => {
+                    warn!("Feed rss Cache Failed {}!", err.to_string());
+                    Default::default()
+                }
             }
-            Err(err) => {
-                warn!("Feed rss Cache Failed {}!", err.to_string());
-                Default::default()
-            }
+        } else {
+            Default::default()
         };
 
         let today = Utc::today();

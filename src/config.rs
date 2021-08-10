@@ -12,8 +12,9 @@ use tracing::info;
 pub struct Config {
     #[cfg(debug_assertions)]
     pub(crate) debug: bool,
+    pub(crate) minify: bool,
     pub(crate) cache_max_days: i64,
-    pub(crate) cache_url: String,
+    pub(crate) cache_url: Option<String>,
     pub(crate) templates_dir: String,
     pub(crate) statics_dir: String,
     pub(crate) site_title: String,
@@ -27,7 +28,8 @@ impl Default for Config {
         Config {
             #[cfg(debug_assertions)]
             debug: false,
-            cache_url: "".to_string(),
+            minify: false,
+            cache_url: None,
             site_title: "".to_string(),
             templates_dir: "includes".to_string(),
             statics_dir: "statics".to_string(),

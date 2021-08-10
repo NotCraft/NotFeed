@@ -5,13 +5,16 @@ mod rss_feed;
 
 use clap::{AppSettings, Clap};
 use config::Config;
-use fs_extra::dir::{copy, CopyOptions};
+use fs_extra::copy_items;
+use fs_extra::dir::{copy, get_dir_content, CopyOptions};
+use html_minifier::{css::minify as css_minify, js::minify as js_minify, minify as html_minify};
 use render::handlebars;
 use rss_feed::Rss;
 use std::fs;
 use std::fs::File;
+use std::io::Write;
 use std::net::SocketAddr;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tracing::{info, span};
 use warp::{self, Filter};
@@ -58,13 +61,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = Config::new()?;
 
     info!("Copying static files!");
-    fs::create_dir_all("target")?;
-    if Path::new(&config.statics_dir).exists() {
-        let mut options = CopyOptions::new();
-        options.content_only = true;
-        options.overwrite = true;
-        copy(&config.statics_dir, "target", &options)?;
-    }
+    copy_statics_to_target(&config)?;
 
     let rss = Rss::feed_rss(&config).await?;
     let hbs = handlebars(&config)?;
@@ -92,10 +89,56 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         SubCommand::Build => {
             let mut output_file = File::create("target/index.html")?;
-            hbs.render_to_write("index", &rss, &mut output_file)?;
+            let render_result = hbs.render("index", &rss)?;
+            let render_result = if config.minify {
+                html_minify(render_result)?
+            } else {
+                render_result
+            };
+            output_file.write_all(render_result.as_bytes())?;
             println!("target/index.html generated");
         }
     }
 
+    Ok(())
+}
+
+fn copy_statics_to_target(config: &Config) -> Result<(), Box<dyn std::error::Error>> {
+    fs::create_dir_all("target")?;
+    if Path::new(&config.statics_dir).exists() {
+        let mut options = CopyOptions::new();
+        options.content_only = !config.minify;
+        options.overwrite = true;
+        if config.minify {
+            let from = get_dir_content(&config.statics_dir)?;
+            let mut src_copy_items = vec![];
+            for file in from.files {
+                if file.ends_with(".js") {
+                    let path = Path::new(&file);
+                    if let Some(filename) = path.file_name() {
+                        let file_content = fs::read_to_string(path)?;
+                        let minify_content = js_minify(&file_content);
+                        let output_path = PathBuf::from("target").join(filename);
+                        let mut output_file = File::create(output_path)?;
+                        output_file.write_all(minify_content.as_bytes())?;
+                    }
+                } else if file.ends_with(".css") {
+                    let path = Path::new(&file);
+                    if let Some(filename) = path.file_name() {
+                        let file_content = fs::read_to_string(path)?;
+                        let minify_content = css_minify(&file_content)?;
+                        let output_path = PathBuf::from("target").join(filename);
+                        let mut output_file = File::create(output_path)?;
+                        output_file.write_all(minify_content.as_bytes())?;
+                    }
+                } else {
+                    src_copy_items.push(file);
+                }
+            }
+            copy_items(&src_copy_items, "target", &options)?;
+        } else {
+            copy(&config.statics_dir, "target", &options)?;
+        }
+    }
     Ok(())
 }

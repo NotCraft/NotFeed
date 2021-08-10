@@ -1,5 +1,15 @@
 # Change Log
 
+## v0.1.2
+
+### Features
+
++ minify support
+
+### Bugfixes
+
++ fix feed cache failed warning without `cache_url` config
+
 ## v0.1.1
 
 ### Features
