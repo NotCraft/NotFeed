@@ -3,6 +3,8 @@ use chrono::{Date, DateTime, Duration, Utc};
 use reqwest::Client;
 use rss::Channel;
 use serde::{Deserialize, Serialize};
+use serde_json::{json, Map, Value};
+use std::collections::HashSet;
 use std::fmt::{Debug, Display};
 use std::fs::File;
 use tracing::{info, warn};
@@ -11,24 +13,14 @@ use tracing::{info, warn};
 pub struct DailyRss {
     #[serde(with = "date_format")]
     pub(crate) date: Date<Utc>,
-    pub(crate) channels: Vec<Channel>,
+    pub(crate) channels: Option<Vec<Channel>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Rss {
-    pub(crate) site_title: String,
-    pub(crate) build_time: DateTime<Utc>,
+    pub(crate) site_title: Option<String>,
+    pub(crate) build_time: Option<DateTime<Utc>>,
     pub(crate) days: Vec<DailyRss>,
-}
-
-impl Default for Rss {
-    fn default() -> Rss {
-        Rss {
-            site_title: "".to_string(),
-            build_time: Utc::now(),
-            days: vec![],
-        }
-    }
 }
 
 impl DailyRss {
@@ -58,7 +50,7 @@ impl DailyRss {
 
         Ok(DailyRss {
             date: Utc::today(),
-            channels,
+            channels: Some(channels),
         })
     }
 }
@@ -92,7 +84,7 @@ impl Rss {
         let today = Utc::today();
         let cache_day = today - Duration::days(config.cache_max_days);
 
-        rss.site_title = config.site_title.clone();
+        rss.site_title = Some(config.site_title.clone());
         rss.days = rss
             .days
             .into_iter()
@@ -103,11 +95,69 @@ impl Rss {
         rss.days
             .push(DailyRss::new(&config.sources, &client).await?);
 
-        rss.days.sort_by(|a, b| b.date.cmp(&a.date));
+        let skip = vec![
+            "itunes_ext",
+            "dublin_core_ext",
+            "syndication_ext",
+            "namespaces",
+            "categories",
+            "extensions",
+            "skip_hours",
+            "skip_days",
+        ]
+        .into_iter()
+        .map(|x| x.to_string())
+        .collect();
+
+        let cache = clean_json(json!(&rss), &skip);
+
         let mut f = File::create("target/cache.json")?;
-        serde_json::to_writer(&mut f, &rss)?;
+        serde_json::to_writer(&mut f, &cache)?;
 
         Ok(rss)
+    }
+}
+
+fn clean_json(value: Value, skip: &HashSet<String>) -> Value {
+    match value {
+        Value::Null => Value::Null,
+        Value::Bool(b) => Value::Bool(b),
+        Value::Number(n) => Value::Number(n),
+        Value::String(s) => Value::String(s),
+        Value::Array(a) => {
+            if a.is_empty() {
+                Value::Null
+            } else {
+                let res: Vec<Value> = a
+                    .into_iter()
+                    .map(|x| clean_json(x, skip))
+                    .filter(|v| !v.is_null())
+                    .collect();
+                Value::Array(res)
+            }
+        }
+        Value::Object(o) => {
+            if o.is_empty() {
+                Value::Null
+            } else {
+                let res: Map<String, Value> = o
+                    .into_iter()
+                    .map(|(k, v)| {
+                        if skip.contains(&k) {
+                            (k, v)
+                        } else {
+                            (k, clean_json(v, skip))
+                        }
+                    })
+                    .filter(|(k, v)| skip.contains(k) || !v.is_null())
+                    .collect();
+                if res.is_empty() {
+                    Value::Null
+                } else {
+                    Value::Object(res)
+                }
+            }
+        }
     }
 }
 
@@ -116,6 +166,31 @@ async fn feed_cache<T: reqwest::IntoUrl + Display>(
     client: &Client,
 ) -> Result<Rss, Box<dyn std::error::Error>> {
     Ok(client.get(url).send().await?.json().await?)
+}
+
+#[cfg(test)]
+mod tests {
+    // Note this useful idiom: importing names from outer (for mod tests) scope.
+    use super::*;
+
+    fn feed_cache_local() -> Result<Rss, Box<dyn std::error::Error>> {
+        use std::io::BufReader;
+        let file = File::open("target/cache.json")?;
+        let reader = BufReader::new(file);
+        Ok(serde_json::from_reader(reader)?)
+    }
+
+    #[tokio::test]
+    async fn feed_cache_load() -> Result<(), Box<dyn std::error::Error>> {
+        let mut config = Config::default();
+        config
+            .sources
+            .push("http://export.arxiv.org/rss/cs.CL".to_string());
+        let _rss = Rss::feed_rss(&config).await?;
+
+        let _feed = feed_cache_local()?;
+        Ok(())
+    }
 }
 
 mod date_format {
