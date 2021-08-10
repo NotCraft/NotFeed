@@ -51,7 +51,7 @@ impl DailyRss {
                     channels.push(channel);
                 }
                 Err(err) => {
-                    info!("Feeding rss from {} failed {}!", url, err.to_string());
+                    warn!("Failed: {}!", err.to_string());
                 }
             };
         }
@@ -74,14 +74,14 @@ impl Rss {
         };
 
         let mut rss: Rss = if let Some(cache_url) = &config.cache_url {
-            info!("Feeding rss cache from {}!", cache_url);
+            info!("Feeding rss cache from {}", cache_url);
             match feed_cache(cache_url, &client).await {
                 Ok(rss) => {
                     info!("Feed rss cache Successfully!");
                     rss
                 }
                 Err(err) => {
-                    warn!("Feed rss Cache Failed {}!", err.to_string());
+                    warn!("Failed: {}!", err.to_string());
                     Default::default()
                 }
             }
@@ -103,6 +103,7 @@ impl Rss {
         rss.days
             .push(DailyRss::new(&config.sources, &client).await?);
 
+        rss.days.sort_by(|a, b| b.date.cmp(&a.date));
         let mut f = File::create("target/cache.json")?;
         serde_json::to_writer(&mut f, &rss)?;
 

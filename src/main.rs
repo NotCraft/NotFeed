@@ -86,8 +86,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         SubCommand::Build => {
             let mut output_file = File::create("target/index.html")?;
+            info!("Rendering templates!");
             let render_result = hbs.render("index", &rss)?;
             let render_result = if config.minify {
+                info!("Minifying templates!");
                 html_minify(render_result)?
             } else {
                 render_result
