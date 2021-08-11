@@ -112,6 +112,7 @@ impl Rss {
         let rss_days = rss_days
             .into_iter()
             .map(|(time, mut channels)| {
+                channels.sort_by_key(|c| c.link.to_owned());
                 channels.dedup();
                 DailyRss {
                     date: time.date(),
