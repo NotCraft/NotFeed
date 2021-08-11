@@ -119,7 +119,7 @@ impl Rss {
                     channels,
                 }
             })
-            .filter(|d| d.date > cache_day && d.date != today)
+            .filter(|d| d.date > cache_day)
             .collect();
 
         let mut rss = Rss {
