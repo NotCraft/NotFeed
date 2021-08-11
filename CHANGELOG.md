@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.1.7
+
+### Features
+
++ latex render
+
 ## v0.1.6
 
 ### Features
