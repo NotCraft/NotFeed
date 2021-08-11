@@ -1,5 +1,15 @@
 # Change Log
 
+## v0.1.6
+
+### Features
+
++ enhance build_time format
+
+### Others
+
++ migrate handlebars to latest stable version
+
 ## v0.1.5
 
 ### Bugfixes

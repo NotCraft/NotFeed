@@ -1,6 +1,6 @@
 [package]
 name = "notfeed"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2018"
 authors = ["ylfeng <ylfeng@ir.hit.edu.cn>"]
 license = "GPL-2.0"
@@ -42,7 +42,5 @@ tracing = "0.1"
 tracing-subscriber = "0.2"
 
 [dependencies.handlebars]
-version = "4.1.2-alpha.0"
+version = "4.1.2"
 features = ["script_helper", "dir_source"]
-git = "https://github.com/sunng87/handlebars-rust.git"
-rev = "d487756468f54a2dfd82f1e39b1424ce0b10ce1b"

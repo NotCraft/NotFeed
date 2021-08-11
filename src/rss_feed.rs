@@ -18,7 +18,6 @@ pub struct DailyRss {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Rss {
     pub(crate) site_title: String,
-    pub(crate) build_time: DateTime<Utc>,
     pub(crate) days: Vec<DailyRss>,
 }
 
@@ -26,7 +25,6 @@ impl Default for Rss {
     fn default() -> Rss {
         Rss {
             site_title: "".to_string(),
-            build_time: Utc::now(),
             days: vec![],
         }
     }
@@ -124,7 +122,6 @@ impl Rss {
 
         let mut rss = Rss {
             site_title: config.site_title.clone(),
-            build_time: Utc::now(),
             days: rss_days,
         };
 
