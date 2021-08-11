@@ -56,10 +56,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _enter = root.enter();
 
     let config = Config::new()?;
-
-    info!("Copying static files!");
-    copy_statics_to_target(&config)?;
-
     let rss = Rss::feed_rss(&config).await?;
     let hbs = handlebars(&config)?;
     let statics_dir = config.statics_dir.as_str();
@@ -85,6 +81,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             warp::serve(routes).run(socks).await;
         }
         SubCommand::Build => {
+            info!("Copying static files!");
+            copy_statics_to_target(&config)?;
             let mut output_file = File::create("target/index.html")?;
             info!("Rendering templates!");
             let render_result = hbs.render("index", &rss)?;
