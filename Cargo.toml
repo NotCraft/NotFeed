@@ -44,11 +44,14 @@ tracing-subscriber = "0.2"
 
 handlebars = { version = "4.1.2", features = ["script_helper", "dir_source"] }
 
-lazy_static = "1.4.0"
-pcre2 = "0.2"
+lazy_static = { version = "1.4", optional = true }
+pcre2 = { version = "0.2", optional = true }
 katex = { version = "0.4.0-alpha.1", optional = true }
 latex2mathml = { version = "0.2", optional = true }
 
 [features]
-default = ["katex"]
+default = ["texml_render"]
+texml_render = ["latex2mathml"]
+katex_render = ["katex", "pcre2", "lazy_static"]
+
 

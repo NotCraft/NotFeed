@@ -3,7 +3,6 @@ use crate::Config;
 use chrono::{SecondsFormat, Utc};
 use handlebars::Handlebars;
 use handlebars::{no_escape, Context, Helper, Output, RenderContext, RenderError};
-use pcre2::bytes::RegexBuilder;
 use regex::Regex;
 use rhai::packages::Package;
 use tracing::info;
@@ -26,7 +25,7 @@ pub fn handlebars(config: &Config) -> Result<Handlebars<'static>, Box<dyn std::e
     handlebars.set_dev_mode(true);
     handlebars.register_escape_fn(no_escape);
     handlebars.register_helper("build_time", Box::new(build_time_helper));
-    handlebars.register_helper("katex_render", Box::new(katex_render_helper));
+    handlebars.register_helper("latex_render", Box::new(latex_render_helper));
     handlebars.register_templates_directory(".hbs", &config.templates_dir)?;
 
     for (name, script_path) in &config.scripts {
@@ -39,12 +38,18 @@ pub fn handlebars(config: &Config) -> Result<Handlebars<'static>, Box<dyn std::e
     Ok(handlebars)
 }
 
+#[cfg(feature = "katex_render")]
+use pcre2::bytes::RegexBuilder;
+#[cfg(feature = "katex_render")]
 const LATEX_REGEX_STR: &str = r"(?<!\\)(?:((?<!\$)\${1,2}(?!\$))|(\\\()|(\\\[)|(\\begin\{equation\}))(?(1)(.*?)(?<!\\)(?<!\$)\1(?!\$)|(?:(.*(?R)?.*)(?<!\\)(?:(?(2)\\\)|(?(3)\\\]|\\end\{equation\})))))";
-
+#[cfg(feature = "katex_render")]
 use lazy_static::lazy_static;
+#[cfg(feature = "katex_render")]
 use std::borrow::Cow;
+#[cfg(feature = "katex_render")]
 use std::option::Option::Some;
 
+#[cfg(feature = "katex_render")]
 lazy_static! {
     static ref LATEX_REGEX: pcre2::bytes::Regex = {
         RegexBuilder::new()
@@ -54,7 +59,10 @@ lazy_static! {
     };
 }
 
-fn katex_render_helper(
+#[cfg(feature = "texml_render")]
+use latex2mathml::replace;
+
+fn latex_render_helper(
     h: &Helper,
     _: &Handlebars,
     _: &Context,
@@ -65,11 +73,18 @@ fn katex_render_helper(
         .param(0)
         .and_then(|v| v.value().as_str())
         .ok_or_else(|| RenderError::new("Param 0 is required for katex render helper."))?;
+    #[cfg(feature = "katex_render")]
     let text = tex_replace(text);
+    #[cfg(feature = "texml_render")]
+    let text = if let Ok(x) = replace(text) {
+        x
+    } else {
+        text.to_string()
+    };
     out.write(&text)?;
     Ok(())
 }
-
+#[cfg(feature = "katex_render")]
 fn tex_replace(text: &str) -> Cow<str> {
     // The slower path, which we use if the replacement needs access to
     // capture groups.
@@ -93,7 +108,7 @@ fn tex_replace(text: &str) -> Cow<str> {
             let opts = katex::Opts::builder().display_mode(true).build().unwrap();
             katex::render_with_opts(text, opts)
         } else {
-            Ok(String::new())
+            Ok(std::str::from_utf8(m.as_bytes()).unwrap().to_string())
         };
 
         if let Ok(txt) = rendered {
