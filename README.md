@@ -1,4 +1,4 @@
-[![Crates.io](https://img.shields.io/crates/v/notfeet.svg)](https://crates.io/crates/notfeed)
+[![Crates.io](https://img.shields.io/crates/v/notfeed.svg)](https://crates.io/crates/notfeed)
 [![license](https://img.shields.io/github/license/notcraft/notfeed.svg?maxAge=86400)](LICENSE)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/notcraft/notfeed/CICD)
 
