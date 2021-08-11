@@ -1,10 +1,11 @@
+extern crate json_value_merge;
 use crate::config::Config;
 use chrono::{Date, DateTime, Duration, Utc};
+use json_value_merge::Merge;
 use reqwest::Client;
 use rss::Channel;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
-use std::collections::HashSet;
 use std::fmt::{Debug, Display};
 use std::fs::File;
 use tracing::{info, warn};
@@ -95,21 +96,7 @@ impl Rss {
         rss.days
             .push(DailyRss::new(&config.sources, &client).await?);
 
-        let skip = vec![
-            "itunes_ext",
-            "dublin_core_ext",
-            "syndication_ext",
-            "namespaces",
-            "categories",
-            "extensions",
-            "skip_hours",
-            "skip_days",
-        ]
-        .into_iter()
-        .map(|x| x.to_string())
-        .collect();
-
-        let cache = clean_json(json!(&rss), &skip);
+        let cache = clean_json(json!(&rss));
 
         let mut f = File::create("target/cache.json")?;
         serde_json::to_writer(&mut f, &cache)?;
@@ -118,7 +105,7 @@ impl Rss {
     }
 }
 
-fn clean_json(value: Value, skip: &HashSet<String>) -> Value {
+fn clean_json(value: Value) -> Value {
     match value {
         Value::Null => Value::Null,
         Value::Bool(b) => Value::Bool(b),
@@ -130,7 +117,7 @@ fn clean_json(value: Value, skip: &HashSet<String>) -> Value {
             } else {
                 let res: Vec<Value> = a
                     .into_iter()
-                    .map(|x| clean_json(x, skip))
+                    .map(|x| clean_json(x))
                     .filter(|v| !v.is_null())
                     .collect();
                 Value::Array(res)
@@ -142,14 +129,8 @@ fn clean_json(value: Value, skip: &HashSet<String>) -> Value {
             } else {
                 let res: Map<String, Value> = o
                     .into_iter()
-                    .map(|(k, v)| {
-                        if skip.contains(&k) {
-                            (k, v)
-                        } else {
-                            (k, clean_json(v, skip))
-                        }
-                    })
-                    .filter(|(k, v)| skip.contains(k) || !v.is_null())
+                    .map(|(k, v)| (k, clean_json(v)))
+                    .filter(|(_k, v)| !v.is_null())
                     .collect();
                 if res.is_empty() {
                     Value::Null
@@ -177,7 +158,14 @@ mod tests {
         use std::io::BufReader;
         let file = File::open("target/cache.json")?;
         let reader = BufReader::new(file);
-        Ok(serde_json::from_reader(reader)?)
+        let value = serde_json::from_reader(reader)?;
+        let mut res = json!(Rss::default());
+
+        println!("{}", res);
+
+        res.merge(value);
+
+        Ok(serde_json::from_value(res)?)
     }
 
     #[tokio::test]
