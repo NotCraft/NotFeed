@@ -3,7 +3,7 @@ use crate::Config;
 use chrono::{SecondsFormat, Utc};
 use handlebars::Handlebars;
 use handlebars::{no_escape, Context, Helper, Output, RenderContext, RenderError};
-use pcre2::bytes::{Match, RegexBuilder};
+use pcre2::bytes::RegexBuilder;
 use regex::Regex;
 use rhai::packages::Package;
 use tracing::info;
@@ -64,9 +64,7 @@ fn katex_render_helper(
     let text = h
         .param(0)
         .and_then(|v| v.value().as_str())
-        .ok_or(RenderError::new(
-            "Param 0 is required for katex render helper.",
-        ))?;
+        .ok_or_else(|| RenderError::new("Param 0 is required for katex render helper."))?;
     let text = tex_replace(text);
     out.write(&text)?;
     Ok(())
@@ -126,9 +124,11 @@ fn build_time_helper(
             let secform = h
                 .hash_get("secform")
                 .and_then(|v| v.value().as_str())
-                .ok_or(RenderError::new(
+                .ok_or_else(|| {
+                    RenderError::new(
                 "Param secform in [Secs,Millis,Micros,Nanos,AutoSi] required for datetime helper.",
-            ))?;
+            )
+                })?;
 
             let secform = match secform {
                 "Secs" => SecondsFormat::Secs,
@@ -142,9 +142,7 @@ fn build_time_helper(
             let use_z = h
                 .hash_get("use_z")
                 .and_then(|v| v.value().as_bool())
-                .ok_or(RenderError::new(
-                    "Param use_z in required for datetime helper.",
-                ))?;
+                .ok_or_else(|| RenderError::new("Param use_z in required for datetime helper."))?;
 
             datetime.to_rfc3339_opts(secform, use_z)
         }
