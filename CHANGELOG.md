@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.1.8
+
+### Features
+
++ fix target not exist
+
 ## v0.1.7
 
 ### Features

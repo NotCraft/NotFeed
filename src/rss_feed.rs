@@ -5,6 +5,7 @@ use rss::Channel;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
+use std::fs;
 use std::fs::File;
 use tracing::{info, warn};
 
@@ -126,6 +127,7 @@ impl Rss {
         };
 
         rss.days.sort_by(|a, b| b.date.cmp(&a.date));
+        fs::create_dir_all("target")?;
         let mut f = File::create("target/cache.json")?;
         serde_json::to_writer(&mut f, &rss)?;
 
