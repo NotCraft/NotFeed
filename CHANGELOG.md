@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.1.5
+
+### Bugfixes
+
++ fix channel time filter
+
 ## v0.1.4
 
 ### Bugfixes

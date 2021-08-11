@@ -3,6 +3,7 @@ use chrono::{Date, DateTime, Duration, Utc};
 use reqwest::Client;
 use rss::Channel;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::fs::File;
 use tracing::{info, warn};
@@ -73,7 +74,7 @@ impl Rss {
                 .build()?,
         };
 
-        let mut rss: Rss = if let Some(cache_url) = &config.cache_url {
+        let rss: Rss = if let Some(cache_url) = &config.cache_url {
             info!("Feeding rss cache from {}", cache_url);
             match feed_cache(cache_url, &client).await {
                 Ok(rss) => {
@@ -89,20 +90,42 @@ impl Rss {
             Default::default()
         };
 
+        let mut rss_items = rss.days;
+        info!("Feeding today's Rss!");
+        rss_items.push(DailyRss::new(&config.sources, &client).await?);
+        let mut rss_days: HashMap<DateTime<Utc>, Vec<Channel>> = HashMap::new();
+
+        for day in rss_items {
+            for channel in day.channels {
+                let date = match &channel.dublin_core_ext {
+                    None => day.date.and_hms(0, 0, 0),
+                    Some(ext) => (&ext.dates[0]).parse()?,
+                };
+                let entry = rss_days.entry(date).or_default();
+                entry.push(channel);
+            }
+        }
+
         let today = Utc::today();
         let cache_day = today - Duration::days(config.cache_max_days);
 
-        rss.build_time = Utc::now();
-        rss.site_title = config.site_title.clone();
-        rss.days = rss
-            .days
+        let rss_days = rss_days
             .into_iter()
+            .map(|(time, mut channels)| {
+                channels.dedup();
+                DailyRss {
+                    date: time.date(),
+                    channels,
+                }
+            })
             .filter(|d| d.date > cache_day && d.date != today)
             .collect();
 
-        info!("Feeding today's Rss!");
-        rss.days
-            .push(DailyRss::new(&config.sources, &client).await?);
+        let mut rss = Rss {
+            site_title: config.site_title.clone(),
+            build_time: Utc::now(),
+            days: rss_days,
+        };
 
         rss.days.sort_by(|a, b| b.date.cmp(&a.date));
         let mut f = File::create("target/cache.json")?;
