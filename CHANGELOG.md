@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.1.9
+
+### Features
+
++ embedded templates and statics
+
 ## v0.1.8
 
 ### Features
