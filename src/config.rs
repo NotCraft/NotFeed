@@ -10,15 +10,15 @@ use tracing::info;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
-    #[cfg(debug_assertions)]
-    pub(crate) debug: bool,
     pub(crate) minify: bool,
     pub(crate) cache_max_days: i64,
-    pub(crate) cache_url: Option<String>,
-    pub(crate) templates_dir: String,
-    pub(crate) statics_dir: String,
     pub(crate) site_title: String,
+    pub(crate) target_dir: String,
+    pub(crate) statics_dir: String,
+    pub(crate) templates_dir: String,
     pub(crate) proxy: Option<String>,
+    pub(crate) cache_url: Option<String>,
+    pub(crate) target_name: Option<String>,
     pub(crate) sources: Vec<String>,
     pub(crate) scripts: HashMap<String, String>,
 }
@@ -26,15 +26,15 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Config {
         Config {
-            #[cfg(debug_assertions)]
-            debug: false,
             minify: false,
-            cache_url: None,
-            site_title: "".to_string(),
-            templates_dir: "includes".to_string(),
-            statics_dir: "statics".to_string(),
             cache_max_days: 0,
-            proxy: Default::default(),
+            site_title: crate_name!().to_string(),
+            target_dir: "target".to_string(),
+            statics_dir: "statics".to_string(),
+            templates_dir: "includes".to_string(),
+            proxy: None,
+            cache_url: None,
+            target_name: None,
             sources: Default::default(),
             scripts: Default::default(),
         }

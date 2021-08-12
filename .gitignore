@@ -20,4 +20,5 @@ Cargo.lock
 /includes-*/
 /scripts/
 /statics/
+/out/
 /Config.toml

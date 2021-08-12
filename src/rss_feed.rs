@@ -8,21 +8,8 @@ use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::fs;
 use std::fs::File;
+use std::path::Path;
 use tracing::{info, warn};
-
-#[macro_export]
-macro_rules! crate_name {
-    () => {
-        env!("CARGO_PKG_NAME")
-    };
-}
-
-#[macro_export]
-macro_rules! crate_homepage {
-    () => {
-        env!("CARGO_PKG_HOMEPAGE")
-    };
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DailyRss {
@@ -145,8 +132,9 @@ impl Rss {
         };
 
         rss.days.sort_by(|a, b| b.datetime.cmp(&a.datetime));
-        fs::create_dir_all("target")?;
-        let mut f = File::create("target/cache.json")?;
+        fs::create_dir_all(&config.target_dir)?;
+        let cache_path = Path::new(&config.target_dir).join("cache.json");
+        let mut f = File::create(cache_path)?;
         serde_json::to_writer(&mut f, &rss)?;
 
         Ok(rss)

@@ -3,16 +3,12 @@ use crate::Config;
 use chrono::{DateTime, SecondsFormat, Utc};
 use handlebars::Handlebars;
 use handlebars::{no_escape, Context, Helper, Output, RenderContext, RenderError};
-#[cfg(feature = "handlebars_misc_helpers")]
-use handlebars_misc_helpers;
 use regex::Regex;
 use rhai::packages::Package;
 use tracing::info;
 
-const TEMPLATES_SRC: &str = include_str!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/vendor/system-templates/index.hbs"
-));
+#[cfg(feature = "handlebars_misc_helpers")]
+use handlebars_misc_helpers::setup_handlebars;
 
 pub fn handlebars(config: &Config) -> Result<Handlebars<'static>, Box<dyn std::error::Error>> {
     info!("Building Script Engine!");
@@ -30,13 +26,14 @@ pub fn handlebars(config: &Config) -> Result<Handlebars<'static>, Box<dyn std::e
 
     handlebars.set_engine(engine);
     handlebars.set_dev_mode(true);
-    handlebars.register_escape_fn(no_escape);
     handlebars.register_helper("build_time", Box::new(build_time_helper));
     handlebars.register_helper("time_format", Box::new(time_format_helper));
     handlebars.register_helper("latex_render", Box::new(latex_render_helper));
     #[cfg(feature = "handlebars_misc_helpers")]
-    handlebars_misc_helpers::setup_handlebars(&mut handlebars);
+    setup_handlebars(&mut handlebars);
 
+    handlebars.register_escape_fn(no_escape);
+    handlebars.register_template_string("pdf", PDF_SRC)?;
     handlebars.register_template_string("index", TEMPLATES_SRC)?;
     handlebars.register_templates_directory(".hbs", &config.templates_dir)?;
 
@@ -123,6 +120,7 @@ lazy_static! {
     };
 }
 
+use crate::utils::{PDF_SRC, TEMPLATES_SRC};
 #[cfg(feature = "texml_render")]
 use latex2mathml::replace;
 

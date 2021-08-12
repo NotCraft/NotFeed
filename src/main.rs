@@ -1,20 +1,20 @@
+#[macro_use]
+mod utils;
 mod config;
 mod render;
 mod rhai_regex;
 mod rss_feed;
 
+use crate::utils::{copy_statics_to_target, latex_escape};
 use clap::{crate_version, AppSettings, Clap};
 use config::Config;
-use fs_extra::copy_items;
-use fs_extra::dir::{copy, get_dir_content, CopyOptions};
-use html_minifier::{css::minify as css_minify, js::minify as js_minify, minify as html_minify};
+
+use html_minifier::minify as html_minify;
 use render::handlebars;
 use rss_feed::Rss;
-use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::net::SocketAddr;
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tracing::{info, span};
 use warp::{self, Filter};
@@ -33,7 +33,10 @@ enum SubCommand {
     Serve(Serve),
 
     #[clap(version = crate_version!(),author = "Feng Yunlong <ylfeng@ir.hit.edu.cn>", about = "Build.")]
-    Build,
+    Build(Build),
+
+    #[clap(version = crate_version!(),author = "Feng Yunlong <ylfeng@ir.hit.edu.cn>", about = "Build PDF.")]
+    Pdf(Pdf),
 }
 
 #[derive(Clap)]
@@ -42,6 +45,18 @@ struct Serve {
     addr: String,
     #[clap(short, long, default_value = "8080", about = "port export")]
     port: u16,
+}
+
+#[derive(Clap)]
+struct Build {
+    #[clap(short, long, about = "output filename")]
+    output: Option<String>,
+}
+
+#[derive(Clap)]
+struct Pdf {
+    #[clap(short, long, about = "output filename")]
+    output: Option<String>,
 }
 
 #[tokio::main]
@@ -57,14 +72,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let config = Config::new()?;
     let rss = Rss::feed_rss(&config).await?;
-    let hbs = handlebars(&config)?;
+    let mut hbs = handlebars(&config)?;
     let statics_dir = config.statics_dir.as_str();
 
     match opts.subcmd {
-        SubCommand::Serve(serve) => {
+        SubCommand::Serve(opt) => {
             let hbs_ref = Arc::new(hbs);
 
-            let socks: SocketAddr = format!("{}:{}", serve.addr, serve.port).parse()?;
+            let socks: SocketAddr = format!("{}:{}", opt.addr, opt.port).parse()?;
 
             let route = warp::get().and(warp::path::end()).map(move || {
                 let result = hbs_ref
@@ -80,10 +95,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             warp::serve(routes).run(socks).await;
         }
-        SubCommand::Build => {
+        SubCommand::Build(opt) => {
             info!("Copying static files!");
             copy_statics_to_target(&config)?;
-            let mut output_file = File::create("target/index.html")?;
             info!("Rendering templates!");
             let render_result = hbs.render("index", &rss)?;
             let render_result = if config.minify {
@@ -92,79 +106,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 render_result
             };
+            let target_dir = std::path::Path::new(&config.target_dir);
+            let default_path = &config
+                .target_name
+                .unwrap_or_else(|| "index.html".to_string());
+            let index_path =
+                target_dir.join(opt.output.unwrap_or_else(|| default_path.to_string()));
+            let mut output_file = File::create(&index_path)?;
             output_file.write_all(render_result.as_bytes())?;
-            println!("target/index.html generated");
+            println!("{} generated", index_path.to_string_lossy());
         }
-    }
-
-    Ok(())
-}
-
-const STATIC_CSS_SRC: &str = include_str!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/vendor/system-statics/index.css"
-));
-
-const STATIC_JS_SRC: &str = include_str!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/vendor/system-statics/index.js"
-));
-
-const STATIC_ICO_SRC: &[u8] = include_bytes!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/vendor/system-statics/favicon.ico"
-));
-
-fn copy_statics_to_target(config: &Config) -> Result<(), Box<dyn std::error::Error>> {
-    fs::create_dir_all("target")?;
-    if Path::new(&config.statics_dir).exists() {
-        let mut options = CopyOptions::new();
-        options.content_only = !config.minify;
-        options.overwrite = true;
-        if config.minify {
-            let from = get_dir_content(&config.statics_dir)?;
-            let mut src_copy_items = vec![];
-            for file in from.files {
-                if file.ends_with(".js") {
-                    let path = Path::new(&file);
-                    if let Some(filename) = path.file_name() {
-                        let file_content = fs::read_to_string(path)?;
-                        let minify_content = js_minify(&file_content);
-                        let output_path = PathBuf::from("target").join(filename);
-                        let mut output_file = File::create(output_path)?;
-                        output_file.write_all(minify_content.as_bytes())?;
-                    }
-                } else if file.ends_with(".css") {
-                    let path = Path::new(&file);
-                    if let Some(filename) = path.file_name() {
-                        let file_content = fs::read_to_string(path)?;
-                        let minify_content = css_minify(&file_content)?;
-                        let output_path = PathBuf::from("target").join(filename);
-                        let mut output_file = File::create(output_path)?;
-                        output_file.write_all(minify_content.as_bytes())?;
-                    }
-                } else {
-                    src_copy_items.push(file);
-                }
-            }
-            copy_items(&src_copy_items, "target", &options)?;
-        } else {
-            copy(&config.statics_dir, "target", &options)?;
+        SubCommand::Pdf(opt) => {
+            let target_dir = std::path::Path::new(&config.target_dir);
+            let default_path = &config
+                .target_name
+                .unwrap_or_else(|| "output.tex".to_string());
+            let index_path =
+                target_dir.join(opt.output.unwrap_or_else(|| default_path.to_string()));
+            let mut output_file = File::create(&index_path)?;
+            info!("Rendering templates!");
+            hbs.register_escape_fn(latex_escape);
+            let render_result = hbs.render("pdf", &rss)?;
+            output_file.write_all(render_result.as_bytes())?;
+            println!("{} generated", index_path.to_string_lossy());
         }
-    }
-    if !Path::new("target/index.css").exists() {
-        let minify_content = css_minify(STATIC_CSS_SRC)?;
-        let mut output_file = File::create("target/index.css")?;
-        output_file.write_all(minify_content.as_bytes())?;
-    }
-    if !Path::new("target/index.js").exists() {
-        let minify_content = js_minify(STATIC_JS_SRC);
-        let mut output_file = File::create("target/index.js")?;
-        output_file.write_all(minify_content.as_bytes())?;
-    }
-    if !Path::new("target/favicon.ico").exists() {
-        let mut output_file = File::create("target/favicon.ico")?;
-        output_file.write_all(STATIC_ICO_SRC)?;
     }
 
     Ok(())

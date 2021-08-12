@@ -1,5 +1,15 @@
 # Change Log
 
+## v0.2.1
+
+### Features
+
++ tex output support
++ misc_helpers default open
++ support target_dir in config
++ support target_name in config
++ support output in command
+
 ## v0.2.0
 
 ### Features

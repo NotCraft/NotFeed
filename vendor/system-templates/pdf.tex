@@ -1,0 +1,66 @@
+\documentclass[a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{fontspec}
+\usepackage{latexsym}
+\usepackage{amsmath, amssymb, mathtools}
+\usepackage{indentfirst}
+\usepackage[dvipsnames,svgnames,x11names,hyperref]{xcolor}
+\usepackage{hyperref}
+\usepackage{times}
+
+% 设置字体
+\usepackage{newtxtext}
+%\usepackage{times}
+%\setmainfont{Times New Roman}
+
+% 设置引用颜色
+\definecolor{nord00}{HTML}{2E3440}
+\definecolor{nord10}{HTML}{5E81AC}
+\definecolor{nord11}{HTML}{BF616A}
+\definecolor{nord12}{HTML}{D08770}
+\definecolor{nord13}{HTML}{EBCB8B}
+\definecolor{nord14}{HTML}{A3BE8C}
+\definecolor{nord15}{HTML}{B48EAD}
+
+\hypersetup{
+    colorlinks      =   true,
+    allbordercolors =   white,
+    linkcolor       =   nord00,         %[red]
+    anchorcolor     =   nord00,         %[black]
+    citecolor       =   nord14,         %[green]
+    filecolor       =   cyan,           %[cyan]
+    menucolor       =   nord11,         %[red]
+    runcolor        =   cyan,           %[cyan - same as file color]
+    urlcolor        =   nord11,        %[magenta]
+}
+
+%定义命令
+\newcommand{\keywords}[1]{\textbf{Key words}: #1}
+\newcommand{\etal}{\textit{et al}.}
+\newcommand{\ie}{\textit{i}.\textit{e}.}
+\newcommand{\eg}{\textit{e}.\textit{g}.}
+\newcommand{\ALPHA}{$\alpha$}
+\newcommand{\BETA}{$\beta$}
+
+\title{ {{ site_title }} }
+\author{ {{ project_name }} {{project_version}} }
+\date{ {{ build_time "%F %T %Z" }} }
+
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+{{#each days}}
+    \section{ {{time_format datetime "%m-%d"}} }
+    {{#each channels}}
+        \subsection{ {{title}} }
+        {{#each items}}
+            \subsubsection{ {{title}} }
+            {{description}}
+            \rightline{\href{ {{link}} }{PDF}}
+        {{/each}}
+    {{/each}}
+{{/each}}
+
+\end{document}
