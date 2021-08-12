@@ -53,7 +53,7 @@ katex = { version = "0.4.0-alpha.1", optional = true }
 latex2mathml = { version = "0.2", optional = true }
 
 [features]
-default = ["texml_render", "misc_helpers"]
+default = ["texml_render"]
 misc_helpers = [
     "handlebars_misc_helpers/json",
     "handlebars_misc_helpers/jsonnet",
