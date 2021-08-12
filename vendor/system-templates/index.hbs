@@ -17,7 +17,7 @@
 {{#each days}}
     <section class="daily-content">
         <h2 class="daily-heading">
-            <time datetime="{{date}}">{{date}}</time>
+            <time datetime="{{datetime}}">{{time_format datetime "%m-%d"}}</time>
         </h2>
         <ul class="sources card">
             {{#each channels}}

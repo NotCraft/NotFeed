@@ -1,5 +1,5 @@
 use crate::config::Config;
-use chrono::{Date, DateTime, Duration, Utc};
+use chrono::{DateTime, Duration, Utc};
 use clap::crate_version;
 use reqwest::Client;
 use rss::Channel;
@@ -26,15 +26,14 @@ macro_rules! crate_homepage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DailyRss {
-    #[serde(with = "date_format")]
-    pub(crate) date: Date<Utc>,
+    pub(crate) datetime: DateTime<Utc>,
     pub(crate) channels: Vec<Channel>,
 }
 
 impl Default for DailyRss {
     fn default() -> DailyRss {
         DailyRss {
-            date: Utc::today(),
+            datetime: Utc::now(),
             channels: vec![],
         }
     }
@@ -75,7 +74,7 @@ impl DailyRss {
         }
 
         Ok(DailyRss {
-            date: Utc::today(),
+            datetime: Utc::now(),
             channels,
         })
     }
@@ -115,7 +114,7 @@ impl Rss {
         for day in rss_items {
             for channel in day.channels {
                 let date = match &channel.dublin_core_ext {
-                    None => day.date.and_hms(0, 0, 0),
+                    None => day.datetime,
                     Some(ext) => (&ext.dates[0]).parse()?,
                 };
                 let entry = rss_days.entry(date).or_default();
@@ -125,18 +124,16 @@ impl Rss {
 
         let today = Utc::today();
         let cache_day = today - Duration::days(config.cache_max_days);
+        let cache_day = cache_day.and_hms(0, 0, 0);
 
         let rss_days = rss_days
             .into_iter()
-            .map(|(time, mut channels)| {
+            .map(|(datetime, mut channels)| {
                 channels.sort_by_key(|c| c.link.to_owned());
                 channels.dedup();
-                DailyRss {
-                    date: time.date(),
-                    channels,
-                }
+                DailyRss { datetime, channels }
             })
-            .filter(|d| d.date > cache_day)
+            .filter(|d| d.datetime > cache_day)
             .collect();
 
         let mut rss = Rss {
@@ -147,7 +144,7 @@ impl Rss {
             days: rss_days,
         };
 
-        rss.days.sort_by(|a, b| b.date.cmp(&a.date));
+        rss.days.sort_by(|a, b| b.datetime.cmp(&a.datetime));
         fs::create_dir_all("target")?;
         let mut f = File::create("target/cache.json")?;
         serde_json::to_writer(&mut f, &rss)?;
@@ -161,29 +158,4 @@ async fn feed_cache<T: reqwest::IntoUrl + Display>(
     client: &Client,
 ) -> Result<Rss, Box<dyn std::error::Error>> {
     Ok(client.get(url).send().await?.json().await?)
-}
-
-mod date_format {
-    use chrono::{Date, NaiveDate, Utc};
-    use serde::{self, Deserialize, Deserializer, Serializer};
-
-    const FORMAT: &str = "%Y-%m-%d";
-
-    pub fn serialize<S>(date: &Date<Utc>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let s = format!("{}", date.format(FORMAT));
-        serializer.serialize_str(&s)
-    }
-
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<Date<Utc>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        NaiveDate::parse_from_str(&s, FORMAT)
-            .map(|d| Date::from_utc(d, Utc))
-            .map_err(serde::de::Error::custom)
-    }
 }
