@@ -1,5 +1,6 @@
 use crate::config::Config;
 use chrono::{Date, DateTime, Duration, Utc};
+use clap::crate_version;
 use reqwest::Client;
 use rss::Channel;
 use serde::{Deserialize, Serialize};
@@ -9,6 +10,20 @@ use std::fs;
 use std::fs::File;
 use tracing::{info, warn};
 
+#[macro_export]
+macro_rules! crate_name {
+    () => {
+        env!("CARGO_PKG_NAME")
+    };
+}
+
+#[macro_export]
+macro_rules! crate_homepage {
+    () => {
+        env!("CARGO_PKG_HOMEPAGE")
+    };
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DailyRss {
     #[serde(with = "date_format")]
@@ -16,19 +31,22 @@ pub struct DailyRss {
     pub(crate) channels: Vec<Channel>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Rss {
-    pub(crate) site_title: String,
-    pub(crate) days: Vec<DailyRss>,
-}
-
-impl Default for Rss {
-    fn default() -> Rss {
-        Rss {
-            site_title: "".to_string(),
-            days: vec![],
+impl Default for DailyRss {
+    fn default() -> DailyRss {
+        DailyRss {
+            date: Utc::today(),
+            channels: vec![],
         }
     }
+}
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct Rss {
+    pub(crate) site_title: String,
+    pub(crate) project_name: String,
+    pub(crate) project_version: String,
+    pub(crate) project_homepage: String,
+    pub(crate) days: Vec<DailyRss>,
 }
 
 impl DailyRss {
@@ -123,6 +141,9 @@ impl Rss {
 
         let mut rss = Rss {
             site_title: config.site_title.clone(),
+            project_name: crate_name!().to_string(),
+            project_version: crate_version!().to_string(),
+            project_homepage: crate_homepage!().to_string(),
             days: rss_days,
         };
 

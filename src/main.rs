@@ -100,6 +100,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+const STATIC_CSS_SRC: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/vendor/system-statics/index.css"
+));
+
+const STATIC_JS_SRC: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/vendor/system-statics/index.js"
+));
+
+const STATIC_ICO_SRC: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/vendor/system-statics/favicon.ico"
+));
+
 fn copy_statics_to_target(config: &Config) -> Result<(), Box<dyn std::error::Error>> {
     fs::create_dir_all("target")?;
     if Path::new(&config.statics_dir).exists() {
@@ -137,5 +152,20 @@ fn copy_statics_to_target(config: &Config) -> Result<(), Box<dyn std::error::Err
             copy(&config.statics_dir, "target", &options)?;
         }
     }
+    if !Path::new("target/index.css").exists() {
+        let minify_content = css_minify(STATIC_CSS_SRC)?;
+        let mut output_file = File::create("target/index.css")?;
+        output_file.write_all(minify_content.as_bytes())?;
+    }
+    if !Path::new("target/index.js").exists() {
+        let minify_content = js_minify(STATIC_JS_SRC);
+        let mut output_file = File::create("target/index.js")?;
+        output_file.write_all(minify_content.as_bytes())?;
+    }
+    if !Path::new("target/favicon.ico").exists() {
+        let mut output_file = File::create("target/favicon.ico")?;
+        output_file.write_all(STATIC_ICO_SRC)?;
+    }
+
     Ok(())
 }

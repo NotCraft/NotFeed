@@ -3,9 +3,16 @@ use crate::Config;
 use chrono::{SecondsFormat, Utc};
 use handlebars::Handlebars;
 use handlebars::{no_escape, Context, Helper, Output, RenderContext, RenderError};
+#[cfg(feature = "handlebars_misc_helpers")]
+use handlebars_misc_helpers;
 use regex::Regex;
 use rhai::packages::Package;
 use tracing::info;
+
+const TEMPLATES_SRC: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/vendor/system-templates/index.hbs"
+));
 
 pub fn handlebars(config: &Config) -> Result<Handlebars<'static>, Box<dyn std::error::Error>> {
     info!("Building Script Engine!");
@@ -26,6 +33,10 @@ pub fn handlebars(config: &Config) -> Result<Handlebars<'static>, Box<dyn std::e
     handlebars.register_escape_fn(no_escape);
     handlebars.register_helper("build_time", Box::new(build_time_helper));
     handlebars.register_helper("latex_render", Box::new(latex_render_helper));
+    #[cfg(feature = "handlebars_misc_helpers")]
+    handlebars_misc_helpers::setup_handlebars(&mut handlebars);
+
+    handlebars.register_template_string("index", TEMPLATES_SRC)?;
     handlebars.register_templates_directory(".hbs", &config.templates_dir)?;
 
     for (name, script_path) in &config.scripts {
@@ -39,15 +50,15 @@ pub fn handlebars(config: &Config) -> Result<Handlebars<'static>, Box<dyn std::e
 }
 
 #[cfg(all(feature = "katex_render", not(feature = "texml_render")))]
-use pcre2::bytes::RegexBuilder;
-#[cfg(all(feature = "katex_render", not(feature = "texml_render")))]
-const LATEX_REGEX_STR: &str = r"(?<!\\)(?:((?<!\$)\${1,2}(?!\$))|(\\\()|(\\\[)|(\\begin\{equation\}))(?(1)(.*?)(?<!\\)(?<!\$)\1(?!\$)|(?:(.*(?R)?.*)(?<!\\)(?:(?(2)\\\)|(?(3)\\\]|\\end\{equation\})))))";
-#[cfg(all(feature = "katex_render", not(feature = "texml_render")))]
 use lazy_static::lazy_static;
+#[cfg(all(feature = "katex_render", not(feature = "texml_render")))]
+use pcre2::bytes::RegexBuilder;
 #[cfg(all(feature = "katex_render", not(feature = "texml_render")))]
 use std::borrow::Cow;
 #[cfg(all(feature = "katex_render", not(feature = "texml_render")))]
 use std::option::Option::Some;
+#[cfg(all(feature = "katex_render", not(feature = "texml_render")))]
+const LATEX_REGEX_STR: &str = r"(?<!\\)(?:((?<!\$)\${1,2}(?!\$))|(\\\()|(\\\[)|(\\begin\{equation\}))(?(1)(.*?)(?<!\\)(?<!\$)\1(?!\$)|(?:(.*(?R)?.*)(?<!\\)(?:(?(2)\\\)|(?(3)\\\]|\\end\{equation\})))))";
 
 #[cfg(all(feature = "katex_render", not(feature = "texml_render")))]
 lazy_static! {

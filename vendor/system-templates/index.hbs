@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>{{site_title}}</title>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="robots" content="noindex, nofollow"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico"/>
+    <link href="index.css" rel="stylesheet"/>
+    <!-- %before-head-end.html% -->
+</head>
+
+<body>
+<!-- %after-body-begin.html% -->
+{{#each days}}
+    <section class="daily-content">
+        <h2 class="daily-heading">
+            <time datetime="{{date}}">{{date}}</time>
+        </h2>
+        <ul class="sources card">
+            {{#each channels}}
+                <li class="source">
+                    <section>
+                        <h3 class="source-name">{{title}}</h3>
+                        <section class="articles-per-source">
+                            {{#each items}}
+                                <article>
+                                    <details class="article-expander">
+                                        <summary class="article-expander__title">{{title}}</summary>
+                                        <a class="article-summary-link article-summary-box-outer" href="{{link}}">
+                                            <div class="article-summary-box-inner">
+                                                <span>{{description}}</span>
+                                            </div>
+                                        </a>
+                                    </details>
+                                </article>
+                            {{/each}}
+                        </section>
+                    </section>
+                </li>
+            {{/each}}
+        </ul>
+    </section>
+{{/each}}
+
+<footer>
+    <time id="build-timestamp" datetime="{{build_time}}">{{build_time "%F %T %Z"}}</time>
+    <span><a class="footer-link" href="{{project_homepage}}"> {{project_name}} {{project_version}}</a></span>
+</footer>
+<script src="index.js"></script>
+<!-- %before-body-end.html% -->
+</body>
+
+</html>
