@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.2.0
+
+### Features
+
++ add datetime format helpers
+
 ## v0.1.9
 
 ### Features
