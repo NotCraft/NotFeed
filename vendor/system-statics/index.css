@@ -56,6 +56,7 @@
     --card-radius: 4px;
 
     --footer-color: var(--base04);
+    --footer-link-text: var(--base04);
     --footer-link-hover-color: var(--base07);
 }
 
@@ -120,10 +121,12 @@ body {
     font-weight: 400;
     margin: 0;
 }
+
 .source-name__link {
     color: var(--source-name-color);
     text-decoration: none;
 }
+
 .source-name__link:hover {
     color: var(--source-name-hover-color);
     text-decoration: underline;
@@ -139,13 +142,16 @@ body {
     font-size: var(--font-size-m);
     font-weight: 600;
 }
+
 .article-expander__title:hover {
     cursor: pointer;
     color: var(--article-title-hover-color);
 }
+
 .article-expander__title::marker {
     color: var(--accordion-title-marker-color);
 }
+
 .article-expander__title:hover::marker {
     color: var(--accordion-title-hover-marker-color);
 }

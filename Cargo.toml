@@ -1,6 +1,6 @@
 [package]
 name = "notfeed"
-version = "0.2.0"
+version = "0.2.1-alpha"
 edition = "2018"
 authors = ["ylfeng <ylfeng@ir.hit.edu.cn>"]
 license = "GPL-2.0"
@@ -9,6 +9,7 @@ homepage = "https://github.com/NotCraft/NotFeed"
 repository = "https://github.com/NotCraft/NotFeed"
 keywords = ["shell", "server", "rss"]
 exclude = [".github"]
+resolver = "2"
 
 [profile.release]
 lto = true
