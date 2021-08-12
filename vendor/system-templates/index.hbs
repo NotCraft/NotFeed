@@ -9,11 +9,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <link rel="shortcut icon" type="image/x-icon" href="favicon.ico"/>
     <link href="index.css" rel="stylesheet"/>
-    <!-- %before-head-end.html% -->
+    <!-- %before-head-end.hbs% -->
+    {{> before-head-end }}
 </head>
 
 <body>
-<!-- %after-body-begin.html% -->
+<!-- %after-body-begin.hbs% -->
+{{> after-body-begin }}
 {{#each days}}
     <section class="daily-content">
         <h2 class="daily-heading">
@@ -50,7 +52,8 @@
     <span><a class="footer-link" href="{{project_homepage}}"> {{project_name}} {{project_version}}</a></span>
 </footer>
 <script src="index.js"></script>
-<!-- %before-body-end.html% -->
+<!-- %before-body-end.hbs% -->
+{{> before-body-end }}
 </body>
 
 </html>

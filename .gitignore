@@ -16,7 +16,8 @@ Cargo.lock
 **/*.rs.bk
 
 # NotFeed Files
-/includes-x/
+/includes/
+/includes-*/
 /scripts/
 /statics/
 /Config.toml
