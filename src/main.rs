@@ -5,10 +5,11 @@ mod render;
 mod rhai_regex;
 mod rss_feed;
 
-use crate::utils::{copy_statics_to_target, latex_escape};
+use crate::utils::copy_statics_to_target;
 use clap::{crate_version, AppSettings, Clap};
 use config::Config;
 
+use handlebars::no_escape;
 use html_minifier::minify as html_minify;
 use render::handlebars;
 use rss_feed::Rss;
@@ -125,7 +126,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 target_dir.join(opt.output.unwrap_or_else(|| default_path.to_string()));
             let mut output_file = File::create(&index_path)?;
             info!("Rendering templates!");
-            hbs.register_escape_fn(latex_escape);
+            hbs.register_escape_fn(no_escape);
             let render_result = hbs.render("pdf", &rss)?;
             output_file.write_all(render_result.as_bytes())?;
             println!("{} generated", index_path.to_string_lossy());

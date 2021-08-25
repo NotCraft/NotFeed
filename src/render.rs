@@ -3,6 +3,7 @@ use crate::Config;
 use chrono::{DateTime, SecondsFormat, Utc};
 use handlebars::Handlebars;
 use handlebars::{no_escape, Context, Helper, Output, RenderContext, RenderError};
+use html_escape::decode_html_entities;
 use regex::Regex;
 use rhai::packages::Package;
 use tracing::info;
@@ -29,6 +30,7 @@ pub fn handlebars(config: &Config) -> Result<Handlebars<'static>, Box<dyn std::e
     handlebars.register_helper("build_time", Box::new(build_time_helper));
     handlebars.register_helper("time_format", Box::new(time_format_helper));
     handlebars.register_helper("latex_render", Box::new(latex_render_helper));
+    handlebars.register_helper("latex_escape", Box::new(latex_escape_helper));
     #[cfg(feature = "handlebars_misc_helpers")]
     setup_handlebars(&mut handlebars);
 
@@ -99,6 +101,37 @@ fn time_format_helper(
     Ok(())
 }
 
+fn latex_escape_helper(
+    h: &Helper,
+    _: &Handlebars,
+    _: &Context,
+    _: &mut RenderContext,
+    out: &mut dyn Output,
+) -> Result<(), RenderError> {
+    let text = h
+        .param(0)
+        .and_then(|v| v.value().as_str())
+        .ok_or_else(|| RenderError::new("Param 0 is required for latex render helper."))?;
+    let decoded_html = decode_html_entities(text);
+    let decoded_html = decoded_html
+        .trim_start_matches("<p>")
+        .trim_end_matches("</p>");
+    let decoded_html = remove_unpair(decoded_html, '{', '}');
+    let text = command_escape(&decoded_html);
+    #[cfg(feature = "texml_render")]
+    let text = if let Ok(x) = latex2mathml::replace(&text) {
+        if x.contains("[PARSE ERROR:") {
+            v_latexescape::escape(&text).to_string()
+        } else {
+            text
+        }
+    } else {
+        text
+    };
+    out.write(&text)?;
+    Ok(())
+}
+
 #[cfg(all(feature = "katex_render", not(feature = "texml_render")))]
 use lazy_static::lazy_static;
 #[cfg(all(feature = "katex_render", not(feature = "texml_render")))]
@@ -120,7 +153,7 @@ lazy_static! {
     };
 }
 
-use crate::utils::{command_escape, PDF_SRC, TEMPLATES_SRC};
+use crate::utils::{command_escape, remove_unpair, PDF_SRC, TEMPLATES_SRC};
 #[cfg(feature = "texml_render")]
 use latex2mathml::replace;
 
@@ -136,8 +169,6 @@ fn latex_render_helper(
         .and_then(|v| v.value().as_str())
         .ok_or_else(|| RenderError::new("Param 0 is required for latex render helper."))?;
     let text = command_escape(text);
-    #[cfg(all(feature = "katex_render", not(feature = "texml_render")))]
-    let text = tex_replace(text);
     #[cfg(feature = "texml_render")]
     let text = if let Ok(x) = replace(&text) {
         if x.contains("[PARSE ERROR:") {

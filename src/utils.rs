@@ -1,7 +1,6 @@
 use crate::config::Config;
 use fs_extra::copy_items;
 use fs_extra::dir::{copy, get_dir_content, CopyOptions};
-use html_escape::decode_html_entities;
 use html_minifier::{css::minify as css_minify, js::minify as js_minify};
 use std::fs;
 use std::fs::File;
@@ -94,25 +93,6 @@ fn remove_unpair_inner(
     }
 }
 
-pub fn latex_escape(input: &str) -> String {
-    let decoded_html = decode_html_entities(input);
-    let decoded_html = decoded_html
-        .trim_start_matches("<p>")
-        .trim_end_matches("</p>");
-    let decoded_html = remove_unpair(decoded_html, '{', '}');
-    let text = command_escape(&decoded_html);
-
-    #[cfg(feature = "texml_render")]
-    if let Ok(x) = latex2mathml::replace(&text) {
-        if x.contains("[PARSE ERROR:") {
-            v_latexescape::escape(&text).to_string()
-        } else {
-            text
-        }
-    } else {
-        text
-    }
-}
 pub fn command_escape(text: &str) -> String {
     let mut res = String::new();
 
@@ -131,7 +111,7 @@ pub fn command_escape(text: &str) -> String {
                 }
                 res.push_str(ch);
             }
-            "\\" | "{" | "}" | "&" | "%" | "_" => {
+            "\\" | "{" | "}" | "&" | "%" | "_" | "#" => {
                 if !math {
                     res += &v_latexescape::escape(ch).to_string();
                 }
