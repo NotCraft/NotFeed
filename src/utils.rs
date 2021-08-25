@@ -94,21 +94,55 @@ fn remove_unpair_inner(
     }
 }
 
-use lazy_static::lazy_static;
-lazy_static! {
-    static ref LATEX_REGEX: regex::Regex =
-        regex::Regex::new(r"(?P<pre>[^\\])(?P<tex>[%&_])").unwrap();
-}
-
 pub fn latex_escape(input: &str) -> String {
     let decoded_html = decode_html_entities(input);
     let decoded_html = decoded_html
         .trim_start_matches("<p>")
         .trim_end_matches("</p>");
     let decoded_html = remove_unpair(decoded_html, '{', '}');
-    LATEX_REGEX
-        .replace_all(&decoded_html, "$pre\\$tex")
-        .to_string()
+    let text = command_escape(&decoded_html);
+
+    #[cfg(feature = "texml_render")]
+    if let Ok(x) = latex2mathml::replace(&text) {
+        if x.contains("[PARSE ERROR:") {
+            v_latexescape::escape(&text).to_string()
+        } else {
+            text
+        }
+    } else {
+        text
+    }
+}
+pub fn command_escape(text: &str) -> String {
+    let mut res = String::new();
+
+    let mut math = false;
+    let mut last_math = false;
+    for ch in text.chars() {
+        let ch = ch.to_string();
+        let ch = ch.as_str();
+        match ch {
+            "$" => {
+                if last_math {
+                    math = true;
+                } else {
+                    math = !math;
+                    last_math = false;
+                }
+                res.push_str(ch);
+            }
+            "\\" | "{" | "}" | "&" | "%" | "_" => {
+                if !math {
+                    res += &v_latexescape::escape(ch).to_string();
+                }
+            }
+            _ => {
+                res.push_str(ch);
+                last_math = false;
+            }
+        }
+    }
+    res
 }
 
 pub fn copy_statics_to_target(config: &Config) -> Result<(), Box<dyn std::error::Error>> {
@@ -172,17 +206,6 @@ pub fn copy_statics_to_target(config: &Config) -> Result<(), Box<dyn std::error:
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
-    fn test_regex() {
-        assert_eq!(
-            LATEX_REGEX.replace_all("98.12% which is 1.62%", "$pre\\$tex"),
-            "98.12\\% which is 1.62\\%"
-        );
-        assert_eq!(
-            LATEX_REGEX.replace_all("98.12\\% which is 1.62%", "$pre\\$tex"),
-            "98.12\\% which is 1.62\\%"
-        );
-    }
 
     #[test]
     fn test_remove() {

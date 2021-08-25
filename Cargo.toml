@@ -1,6 +1,6 @@
 [package]
 name = "notfeed"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2018"
 authors = ["ylfeng <ylfeng@ir.hit.edu.cn>"]
 license = "GPL-2.0"
@@ -51,6 +51,7 @@ lazy_static = "1.4"
 pcre2 = { version = "0.2", optional = true }
 katex = { version = "0.4.0-alpha.1", optional = true }
 latex2mathml = { version = "0.2", optional = true }
+v_latexescape = { version = "0.12.1", optional = true }
 
 [features]
 default = ["texml_render"]
@@ -60,7 +61,7 @@ misc_helpers = [
     "handlebars_misc_helpers/string",
     "handlebars_misc_helpers/http_reqwest"
 ]
-texml_render = ["latex2mathml"]
+texml_render = ["latex2mathml", "v_latexescape"]
 katex_render = ["katex", "pcre2"]
 
 

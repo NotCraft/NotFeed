@@ -120,7 +120,7 @@ lazy_static! {
     };
 }
 
-use crate::utils::{PDF_SRC, TEMPLATES_SRC};
+use crate::utils::{command_escape, PDF_SRC, TEMPLATES_SRC};
 #[cfg(feature = "texml_render")]
 use latex2mathml::replace;
 
@@ -135,13 +135,18 @@ fn latex_render_helper(
         .param(0)
         .and_then(|v| v.value().as_str())
         .ok_or_else(|| RenderError::new("Param 0 is required for latex render helper."))?;
+    let text = command_escape(text);
     #[cfg(all(feature = "katex_render", not(feature = "texml_render")))]
     let text = tex_replace(text);
     #[cfg(feature = "texml_render")]
-    let text = if let Ok(x) = replace(text) {
-        x
+    let text = if let Ok(x) = replace(&text) {
+        if x.contains("[PARSE ERROR:") {
+            text
+        } else {
+            x
+        }
     } else {
-        text.to_string()
+        text
     };
     out.write(&text)?;
     Ok(())
