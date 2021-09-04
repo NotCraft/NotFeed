@@ -117,7 +117,7 @@ impl Rss {
             .into_iter()
             .map(|(datetime, mut channels)| {
                 channels.sort_by_key(|c| c.link.to_owned());
-                channels.dedup();
+                channels.dedup_by(|a, b| a.link == b.link);
                 DailyRss { datetime, channels }
             })
             .filter(|d| d.datetime > cache_day)
