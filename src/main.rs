@@ -6,7 +6,7 @@ mod rhai_regex;
 mod rss_feed;
 
 use crate::utils::copy_statics_to_target;
-use clap::{crate_version, AppSettings, Clap};
+use clap::{crate_version, Parser};
 use config::Config;
 
 use handlebars::no_escape;
@@ -20,15 +20,14 @@ use std::sync::Arc;
 use tracing::{info, span};
 use warp::{self, Filter};
 
-#[derive(Clap)]
+#[derive(Parser)]
 #[clap(version = crate_version!(), author = "Feng Yunlong <ylfeng@ir.hit.edu.cn>")]
-#[clap(setting = AppSettings::ColoredHelp)]
 struct Opts {
     #[clap(subcommand)]
     subcmd: SubCommand,
 }
 
-#[derive(Clap)]
+#[derive(Parser)]
 enum SubCommand {
     #[clap(version = crate_version!(), author = "Feng Yunlong <ylfeng@ir.hit.edu.cn>", about = "Server serve.")]
     Serve(Serve),
@@ -40,7 +39,7 @@ enum SubCommand {
     Pdf(Pdf),
 }
 
-#[derive(Clap)]
+#[derive(Parser)]
 struct Serve {
     #[clap(short, long, default_value = "127.0.0.1", about = "addr export")]
     addr: String,
@@ -48,13 +47,13 @@ struct Serve {
     port: u16,
 }
 
-#[derive(Clap)]
+#[derive(Parser)]
 struct Build {
     #[clap(short, long, about = "output filename")]
     output: Option<String>,
 }
 
-#[derive(Clap)]
+#[derive(Parser)]
 struct Pdf {
     #[clap(short, long, about = "output filename")]
     output: Option<String>,
