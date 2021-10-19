@@ -18,7 +18,7 @@ pub struct RhaiMatch {
 #[export_module]
 mod regex_module {
     use crate::rhai_regex::RhaiMatch;
-    use regex::Regex;
+    use regex::{Regex, RegexBuilder};
     use rhai::{Dynamic, EvalAltResult, ImmutableString, NativeCallContext, Position};
 
     #[rhai_fn(get = "text")]
@@ -38,15 +38,18 @@ mod regex_module {
 
     #[rhai_fn(name = "Regex", return_raw)]
     pub fn regex_new(re: &str) -> Result<Regex, Box<EvalAltResult>> {
-        Regex::new(re).map_err(|err| {
-            EvalAltResult::ErrorInFunctionCall(
-                "new_regex".to_string(),
-                err.to_string(),
-                "".into(),
-                Position::NONE,
-            )
-            .into()
-        })
+        RegexBuilder::new(re)
+            .case_insensitive(true)
+            .build()
+            .map_err(|err| {
+                EvalAltResult::ErrorInFunctionCall(
+                    "new_regex".to_string(),
+                    err.to_string(),
+                    "".into(),
+                    Position::NONE,
+                )
+                .into()
+            })
     }
 
     #[rhai_fn(name = "find")]
