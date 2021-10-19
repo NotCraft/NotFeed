@@ -1,6 +1,6 @@
 [package]
 name = "notfeed"
-version = "0.2.3"
+version = "0.2.4"
 edition = "2018"
 authors = ["ylfeng <ylfeng@ir.hit.edu.cn>"]
 license = "GPL-2.0"
