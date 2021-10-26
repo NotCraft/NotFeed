@@ -4,6 +4,7 @@ use clap::crate_version;
 use reqwest::Client;
 use rss::Channel;
 use serde::{Deserialize, Serialize};
+use std::cmp::Reverse;
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::fs;
@@ -65,6 +66,22 @@ impl DailyRss {
             channels,
         })
     }
+
+    pub fn datetime(&self) -> DateTime<Utc> {
+        for c in &self.channels {
+            if let Some(x) = &c.pub_date {
+                let time = x.parse().unwrap();
+                return time;
+            }
+            if let Some(x) = &c.dublin_core_ext {
+                if let Some(dates) = x.dates.first() {
+                    let time = dates.parse().unwrap();
+                    return time;
+                }
+            }
+        }
+        self.datetime
+    }
 }
 
 impl Rss {
@@ -120,7 +137,7 @@ impl Rss {
                 channels.dedup_by(|a, b| a.link == b.link);
                 DailyRss { datetime, channels }
             })
-            .filter(|d| d.datetime > cache_day)
+            .filter(|d| d.datetime() > cache_day)
             .collect();
 
         let mut rss = Rss {
@@ -131,7 +148,7 @@ impl Rss {
             days: rss_days,
         };
 
-        rss.days.sort_by(|a, b| b.datetime.cmp(&a.datetime));
+        rss.days.sort_by_key(|x| Reverse(x.datetime()));
         fs::create_dir_all(&config.target_dir)?;
         let cache_path = Path::new(&config.target_dir).join("cache.json");
         let mut f = File::create(cache_path)?;
