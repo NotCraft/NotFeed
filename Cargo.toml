@@ -50,7 +50,7 @@ lazy_static = "1.4"
 pcre2 = { version = "0.2", optional = true }
 katex = { version = "0.4", optional = true }
 latex2mathml = { version = "0.2", optional = true }
-v_latexescape = { version = "0.12.1", optional = true }
+v_latexescape = { version = "0.13.1", optional = true }
 
 [features]
 default = ["texml_render"]
