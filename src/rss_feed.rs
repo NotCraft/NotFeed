@@ -110,9 +110,14 @@ impl Rss {
             Default::default()
         };
 
-        let mut rss_items = rss.days;
+        let rss_items = rss.days;
         info!("Feeding today's Rss!");
-        rss_items.insert(0, DailyRss::new(&config.sources, &client).await?);
+        let today_rss: DailyRss = DailyRss::new(&config.sources, &client).await?;
+        let mut rss_items: Vec<DailyRss> = rss_items
+            .into_iter()
+            .filter(|x| x.datetime().date() != today_rss.datetime().date())
+            .collect();
+        rss_items.push(today_rss);
         let mut rss_days: HashMap<DateTime<Utc>, Vec<Channel>> = HashMap::new();
 
         for day in rss_items {
