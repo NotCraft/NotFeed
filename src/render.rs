@@ -115,10 +115,8 @@ fn latex_escape_helper(
         .and_then(|v| v.value().as_str())
         .ok_or_else(|| RenderError::new("Param 0 is required for latex render helper."))?;
     let decoded_html = decode_html_entities(text);
-    let decoded_html = decoded_html
-        .trim_start_matches("<p>")
-        .trim_end_matches("</p>");
-    let decoded_html = remove_unpair(decoded_html, '{', '}');
+    let decoded_html = decoded_html.replace("<p>", "").replace("</p>", "");
+    let decoded_html = remove_unpair(&decoded_html, '{', '}');
     let text = command_escape(&decoded_html);
     let text = v_latexescape::escape(&text).to_string();
     out.write(&text)?;
