@@ -1,9 +1,11 @@
-use crate::rhai_regex::{PlusPackage, RhaiMatch};
+use crate::rhai_ext::{PlusPackage, RhaiMatch};
+use crate::utils::{command_escape, remove_unpair, PDF_SRC, TEMPLATES_SRC};
 use crate::Config;
 use chrono::{DateTime, SecondsFormat, Utc};
 use handlebars::Handlebars;
 use handlebars::{no_escape, Context, Helper, Output, RenderContext, RenderError};
 use html_escape::decode_html_entities;
+use latex2mathml::replace;
 use regex::Regex;
 use rhai::packages::Package;
 use tracing::info;
@@ -118,44 +120,10 @@ fn latex_escape_helper(
         .trim_end_matches("</p>");
     let decoded_html = remove_unpair(decoded_html, '{', '}');
     let text = command_escape(&decoded_html);
-    #[cfg(feature = "texml_render")]
-    let text = if let Ok(x) = latex2mathml::replace(&text) {
-        if x.contains("[PARSE ERROR:") {
-            v_latexescape::escape(&text).to_string()
-        } else {
-            text
-        }
-    } else {
-        text
-    };
+    let text = v_latexescape::escape(&text).to_string();
     out.write(&text)?;
     Ok(())
 }
-
-#[cfg(all(feature = "katex_render", not(feature = "texml_render")))]
-use lazy_static::lazy_static;
-#[cfg(all(feature = "katex_render", not(feature = "texml_render")))]
-use pcre2::bytes::RegexBuilder;
-#[cfg(all(feature = "katex_render", not(feature = "texml_render")))]
-use std::borrow::Cow;
-#[cfg(all(feature = "katex_render", not(feature = "texml_render")))]
-use std::option::Option::Some;
-#[cfg(all(feature = "katex_render", not(feature = "texml_render")))]
-const LATEX_REGEX_STR: &str = r"(?<!\\)(?:((?<!\$)\${1,2}(?!\$))|(\\\()|(\\\[)|(\\begin\{equation\}))(?(1)(.*?)(?<!\\)(?<!\$)\1(?!\$)|(?:(.*(?R)?.*)(?<!\\)(?:(?(2)\\\)|(?(3)\\\]|\\end\{equation\})))))";
-
-#[cfg(all(feature = "katex_render", not(feature = "texml_render")))]
-lazy_static! {
-    static ref LATEX_REGEX: pcre2::bytes::Regex = {
-        RegexBuilder::new()
-            .jit(true)
-            .build(LATEX_REGEX_STR)
-            .unwrap()
-    };
-}
-
-use crate::utils::{command_escape, remove_unpair, PDF_SRC, TEMPLATES_SRC};
-#[cfg(feature = "texml_render")]
-use latex2mathml::replace;
 
 fn latex_render_helper(
     h: &Helper,
@@ -169,7 +137,6 @@ fn latex_render_helper(
         .and_then(|v| v.value().as_str())
         .ok_or_else(|| RenderError::new("Param 0 is required for latex render helper."))?;
     let text = command_escape(text);
-    #[cfg(feature = "texml_render")]
     let text = if let Ok(x) = replace(&text) {
         if x.contains("[PARSE ERROR:") {
             text
@@ -181,43 +148,6 @@ fn latex_render_helper(
     };
     out.write(&text)?;
     Ok(())
-}
-
-#[cfg(all(feature = "katex_render", not(feature = "texml_render")))]
-fn tex_replace(text: &str) -> Cow<str> {
-    // The slower path, which we use if the replacement needs access to
-    // capture groups.
-    let mut it = LATEX_REGEX.captures_iter(text.as_bytes()).peekable();
-    if it.peek().is_none() {
-        return Cow::Borrowed(text);
-    }
-    let mut new = String::with_capacity(text.len());
-    let mut last_match = 0;
-    for cap in it {
-        // unwrap on 0 is OK because captures only reports matches
-        let cap = cap.unwrap();
-        let m = cap.get(0).unwrap();
-        new.push_str(&text[last_match..m.start()]);
-
-        let rendered = if let Some(x) = cap.get(5) {
-            let text = std::str::from_utf8(x.as_bytes()).unwrap();
-            katex::render(text)
-        } else if let Some(x) = cap.get(6) {
-            let text = std::str::from_utf8(x.as_bytes()).unwrap();
-            let opts = katex::Opts::builder().display_mode(true).build().unwrap();
-            katex::render_with_opts(text, opts)
-        } else {
-            Ok(std::str::from_utf8(m.as_bytes()).unwrap().to_string())
-        };
-
-        if let Ok(txt) = rendered {
-            new.push_str(&txt)
-        };
-
-        last_match = m.end();
-    }
-    new.push_str(&text[last_match..]);
-    Cow::Owned(new)
 }
 
 fn build_time_helper(

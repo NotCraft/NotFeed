@@ -2,7 +2,7 @@
 mod utils;
 mod config;
 mod render;
-mod rhai_regex;
+mod rhai_ext;
 mod rss_feed;
 
 use crate::utils::copy_statics_to_target;

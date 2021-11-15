@@ -44,25 +44,10 @@ tracing-subscriber = "0.3"
 
 html-escape = "0.2"
 handlebars = { version = "4", features = ["script_helper", "dir_source"] }
-handlebars_misc_helpers = { version = "0.12.1", default-features = false, optional = true }
 
 lazy_static = "1.4"
-pcre2 = { version = "0.2", optional = true }
-katex = { version = "0.4", optional = true }
-latex2mathml = { version = "0.2", optional = true }
-v_latexescape = { version = "0.13", optional = true }
-
-[features]
-default = ["texml_render"]
-misc_helpers = [
-    "handlebars_misc_helpers/json",
-    "handlebars_misc_helpers/jsonnet",
-    "handlebars_misc_helpers/string",
-    "handlebars_misc_helpers/http_reqwest"
-]
-texml_render = ["latex2mathml", "v_latexescape"]
-katex_render = ["katex", "pcre2"]
-
+latex2mathml = "0.2"
+v_latexescape = "0.13"
 
 [dev-dependencies]
 cargo-husky = "1"

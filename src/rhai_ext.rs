@@ -6,6 +6,7 @@ use rhai::{def_package, packages::StandardPackage};
 def_package!(rhai:PlusPackage:"For Regex support.", lib, {
     StandardPackage::init(lib);
     combine_with_exported_module!(lib, "regex", regex_module);
+    combine_with_exported_module!(lib, "utils", utils_module);
 });
 
 #[derive(Debug, Clone)]
@@ -16,8 +17,18 @@ pub struct RhaiMatch {
 }
 
 #[export_module]
+mod utils_module {
+    use rhai::ImmutableString;
+
+    #[rhai_fn(name = "latex_escape")]
+    pub fn latex_escape(text: &str) -> ImmutableString {
+        v_latexescape::escape(text).to_string().into()
+    }
+}
+
+#[export_module]
 mod regex_module {
-    use crate::rhai_regex::RhaiMatch;
+    use crate::rhai_ext::RhaiMatch;
     use regex::{Regex, RegexBuilder};
     use rhai::{Dynamic, EvalAltResult, ImmutableString, NativeCallContext, Position};
 

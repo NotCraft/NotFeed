@@ -56,7 +56,7 @@
     {{#each channels}}
         \subsection{ {{title}} }
         {{#each items}}
-            \subsubsection{ {{title}} }
+            \subsubsection{ {{latex_escape title}} }
             {{latex_escape description}}
             \rightline{\href{ {{link}} }{PDF}}
         {{/each}}
