@@ -40,7 +40,7 @@ rhai = "1.1"
 fs_extra = "1.2.0"
 
 tracing = "0.1"
-tracing-subscriber = "0.2"
+tracing-subscriber = "0.3"
 
 html-escape = "0.2"
 handlebars = { version = "4", features = ["script_helper", "dir_source"] }
