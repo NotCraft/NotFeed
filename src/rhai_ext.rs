@@ -18,11 +18,17 @@ pub struct RhaiMatch {
 
 #[export_module]
 mod utils_module {
+    use html_escape::decode_html_entities;
     use rhai::ImmutableString;
 
     #[rhai_fn(name = "latex_escape")]
     pub fn latex_escape(text: &str) -> ImmutableString {
         v_latexescape::escape(text).to_string().into()
+    }
+
+    #[rhai_fn(name = "html_unescape")]
+    pub fn html_unescape(text: &str) -> ImmutableString {
+        decode_html_entities(text).to_string().into()
     }
 }
 
