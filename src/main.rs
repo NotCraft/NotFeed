@@ -29,33 +29,31 @@ struct Opts {
 
 #[derive(Parser)]
 enum SubCommand {
-    #[clap(version = crate_version!(), author = "Feng Yunlong <ylfeng@ir.hit.edu.cn>", about = "Server serve.")]
     Serve(Serve),
-
-    #[clap(version = crate_version!(),author = "Feng Yunlong <ylfeng@ir.hit.edu.cn>", about = "Build.")]
     Build(Build),
-
-    #[clap(version = crate_version!(),author = "Feng Yunlong <ylfeng@ir.hit.edu.cn>", about = "Build PDF.")]
     Pdf(Pdf),
 }
 
 #[derive(Parser)]
+#[clap(version = crate_version!(), author = "Feng Yunlong <ylfeng@ir.hit.edu.cn>", about = "Server serve.")]
 struct Serve {
-    #[clap(short, long, default_value = "127.0.0.1", about = "addr export")]
+    #[clap(short, long, default_value = "127.0.0.1", help = "addr export")]
     addr: String,
-    #[clap(short, long, default_value = "8080", about = "port export")]
+    #[clap(short, long, default_value = "8080", help = "port export")]
     port: u16,
 }
 
 #[derive(Parser)]
+#[clap(version = crate_version!(), author = "Feng Yunlong <ylfeng@ir.hit.edu.cn>", about = "Build.")]
 struct Build {
-    #[clap(short, long, about = "output filename")]
+    #[clap(short, long, help = "output filename")]
     output: Option<String>,
 }
 
 #[derive(Parser)]
+#[clap(version = crate_version!(), author = "Feng Yunlong <ylfeng@ir.hit.edu.cn>", about = "Build PDF.")]
 struct Pdf {
-    #[clap(short, long, about = "output filename")]
+    #[clap(short, long, help = "output filename")]
     output: Option<String>,
 }
 
