@@ -47,7 +47,7 @@ handlebars = { version = "4", features = ["script_helper", "dir_source"] }
 
 lazy_static = "1.4"
 latex2mathml = "0.2"
-v_latexescape = "0.13"
+v_latexescape = "0.14"
 
 [dev-dependencies]
 cargo-husky = "1"
