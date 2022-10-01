@@ -33,7 +33,7 @@ reqwest = { version = "0.11", default-features = false, features = ["json", "rus
 tokio = { version = "1", features = ["full"] }
 warp = { version = "0.3", features = ["tls"] }
 
-clap = { version = "3", features = ["derive", "cargo"] }
+clap = { version = "4", features = ["derive", "cargo"] }
 clap_generate = "3"
 
 rhai = "1"
