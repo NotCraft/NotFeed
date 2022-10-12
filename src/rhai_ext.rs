@@ -3,11 +3,13 @@
 use rhai::plugin::*;
 use rhai::{def_package, packages::StandardPackage};
 
-def_package!(rhai:PlusPackage:"For Regex support.", lib, {
-    StandardPackage::init(lib);
-    combine_with_exported_module!(lib, "regex", regex_module);
-    combine_with_exported_module!(lib, "utils", utils_module);
-});
+def_package! {
+    pub PlusPackage(module) {
+        StandardPackage::init(module);
+        combine_with_exported_module!(module, "regex", regex_module);
+        combine_with_exported_module!(module, "utils", utils_module);
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct RhaiMatch {
@@ -65,7 +67,7 @@ mod regex_module {
                     "".into(),
                     Position::NONE,
                 )
-                .into()
+                    .into()
             })
     }
 

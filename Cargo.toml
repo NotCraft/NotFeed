@@ -1,6 +1,6 @@
 [package]
 name = "notfeed"
-version = "0.2.9"
+version = "0.2.10"
 edition = "2021"
 authors = ["ylfeng <ylfeng@ir.hit.edu.cn>"]
 license = "GPL-2.0"
@@ -33,8 +33,7 @@ reqwest = { version = "0.11", default-features = false, features = ["json", "rus
 tokio = { version = "1", features = ["full"] }
 warp = { version = "0.3", features = ["tls"] }
 
-clap = { version = "3", features = ["derive", "cargo"] }
-clap_generate = "3"
+clap = { version = "4", features = ["derive", "cargo"] }
 
 rhai = "1"
 fs_extra = "1.2.0"
@@ -47,7 +46,7 @@ handlebars = { version = "4", features = ["script_helper", "dir_source"] }
 
 lazy_static = "1.4"
 latex2mathml = "0.2"
-v_latexescape = "0.13"
+v_latexescape = "0.14"
 
 [dev-dependencies]
 cargo-husky = "1"
