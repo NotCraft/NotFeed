@@ -22,7 +22,7 @@ serde = "1"
 serde_json = "1"
 serde_derive = "1"
 
-html-minifier = "3"
+html-minifier = "4"
 
 chrono = { version = "0.4", features = ["serde"] }
 figment = { version = "0.10", features = ["toml", "yaml", "env"] }
