@@ -42,7 +42,7 @@ tracing = "0.1"
 tracing-subscriber = "0.3"
 
 html-escape = "0.2"
-handlebars = { version = "4", features = ["script_helper", "dir_source"] }
+handlebars = { version = "5", features = ["script_helper", "dir_source"] }
 
 lazy_static = "1.4"
 latex2mathml = "0.2"
